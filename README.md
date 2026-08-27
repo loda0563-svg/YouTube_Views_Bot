@@ -104,17 +104,7 @@ python3 bot.py --visits 100 --url https://www.youtube.com/watch?v=IamNOOB --verb
 
 ### For more help, details, chat and feedback join [Telegram Group](http://t.me/linux_repo)
 
-## Follow on:
-### GitHub: https://github.com/AbirHasan2005
-### Twitter: https://twitter.com/AbirHasan2005
-### Facebook: https://facebook.com/AbirHasan2005
-### Instagram: https://instagram.com/AbirHasan2005
-
-## Donate me if you want to help me:
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/AbirHasan2005)
-
----
+--
 
 ## Codes from [bot.py](https://github.com/AbirHasan2005/YouTube_Views_Bot/blob/master/bot.py)
 ```python
