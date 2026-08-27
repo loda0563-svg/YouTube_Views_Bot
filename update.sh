@@ -1,6 +1,5 @@
 #!/bin/bash
 # Update Script for YouTube_Views_Bot
-# Script created by @AbirHasan2005
 
 
 dependencies() {
