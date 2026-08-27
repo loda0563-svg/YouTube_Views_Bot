@@ -1,112 +1,235 @@
-#!/usr/bin/env python3
+cat > modules/youtube_fixed.py << 'EOF'
 # -*- coding: utf-8 -*-
 
-# A Bot to increase YouTube video views
-# This python script was coded by AbirHasan2005
-# If you use any codes from here than must give me credits
-# Read README.md
-# Telegram Group: http://t.me/linux_repo
-
-# Python Bot script starts:
-import sys
 import time
-from random import randrange
-from modules.youtube import YouTube
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import JavascriptException
 from modules import utils
 
 
-class Bot:
-    # Bot to increase YouTube video views
-    # Coded by AbirHasan2005
+class YouTube:
+    """ YouTube """
 
-    def __init__(self, options):
-        # init variables
+    def __init__(self, url='https://youtube.com', proxy=None, verbose=False):
+        """ init variables """
 
-        self.opts = options
+        self.url = url
+        self.proxy = proxy
+        self.verbose = verbose
+        # Firefox options
+        self.options = webdriver.FirefoxOptions()
+        # Run in headless mode
+        self.options.add_argument('--headless')
+        # Disables GPU hardware acceleration
+        self.options.add_argument('--disable-gpu')
+        # Disable audio
+        self.options.add_argument('--mute-audio')
+        # Firefox specific settings
+        self.options.set_preference('browser.cache.disk.enable', False)
+        self.options.set_preference('browser.cache.memory.enable', False)
+        self.options.set_preference('browser.cache.offline.enable', False)
+        self.options.set_preference('network.http.use-cache', False)
+        
+        if self.proxy:
+            # Set proxy for Firefox
+            proxy_parts = self.proxy.split(':')
+            self.options.set_preference('network.proxy.http', proxy_parts[0])
+            self.options.set_preference('network.proxy.http_port', int(proxy_parts[1]))
+            self.options.set_preference('network.proxy.ssl', proxy_parts[0])
+            self.options.set_preference('network.proxy.ssl_port', int(proxy_parts[1]))
+            self.options.set_preference('network.proxy.type', 1)
+        
+        # User agent
+        self.user_agent = utils.user_agent()
+        self.options.set_preference('general.useragent.override', self.user_agent)
+        
+        self.browser = webdriver.Firefox(options=self.options)
+        self.default_timeout = 20
+        self.browser.implicitly_wait(self.default_timeout)
+        self.browser.set_window_size(1920, 1080)
+        self.open_url()
 
-    @staticmethod
-    def player_status(value):
-        # Returns the status based one the input code
+    def find_by_class(self, class_name):
+        """ finds an element by class name """
+        return self.browser.find_element(By.CLASS_NAME, class_name)
 
-        status = {
-            -1: 'unstarted',
-            0: 'ended',
-            1: 'playing',
-            2: 'paused',
-            3: 'buffering',
-            5: 'video cued',
-        }
-        return status[value] if value in status else 'unknown'
+    def find_all_by_class(self, class_name):
+        """ finds all elements by class name """
+        return self.browser.find_elements(By.CLASS_NAME, class_name)
 
-    def run(self):
-        # run
+    def find_by_id(self, id_name):
+        """ finds a element by id """
+        return self.browser.find_element(By.ID, id_name)
 
-        count = 1
-        ipaddr = None
-        while count <= self.opts.visits:
-            if self.opts.enable_tor:
-                ipaddr = utils.get_new_tor_ipaddr(proxy=self.opts.proxy)
-            if not ipaddr:
-                ipaddr = utils.get_ipaddr(proxy=self.opts.proxy)
-            youtube = YouTube(
-                url=self.opts.url,
-                proxy=self.opts.proxy,
-                verbose=self.opts.verbose
-            )
-            title = youtube.get_title()
-            if not title:
-                if self.opts.verbose:
-                    print('There was a problem while loading this page. Retrying ...')
-                    youtube.disconnect()
-                    continue
-            if self.opts.visits:
-                length = (len(title) + 4 - len(str(count)))
-                print('[{0}] {1}'.format(count, '-' * length))
-            if ipaddr:
-                print('External IP address:', ipaddr)
-            channel_name = youtube.get_channel_name()
-            if channel_name:
-                print('Channel name:', channel_name)
-            subscribers = youtube.get_subscribers()
-            if subscribers:
-                print('Subscribers:', subscribers)
-            print('Title:', title)
-            views = youtube.get_views()
-            if views:
-                print('Views:', views)
-            # youtube.play_video()
-            youtube.skip_ad()
-            if self.opts.verbose:
-                status = youtube.get_player_state()
-                print('Video status:', self.player_status(status))
-            video_duration = youtube.time_duration()
-            seconds = 30
-            if video_duration:
-                print('Video duration time:', video_duration)
-                seconds = utils.to_seconds(duration=video_duration.split(':'))
-                if seconds:
-                    if self.opts.verbose:
-                        print('Video duration time in seconds:', seconds)
-            sleep_time = randrange(seconds)
-            print('Vtopping video in %s seconds' % sleep_time)
-            time.sleep(sleep_time)
-            youtube.disconnect()
-            count += 1
+    def find_all_by_id(self, id_name):
+        """ finds all elements by id """
+        return self.browser.find_elements(By.ID, id_name)
 
+    def find_by_name(self, name):
+        """ finds a element by name """
+        return self.browser.find_element(By.NAME, name)
 
-def _main():
-    """ main """
+    def find_all_by_name(self, name):
+        """ finds all elements by name """
+        return self.browser.find_elements(By.NAME, name)
 
-    try:
-        cli_args = utils.get_cli_args()
-        bot = Bot(cli_args)
-        bot.run()
-    except KeyboardInterrupt:
-        pass
+    def find_by_xpath(self, xpath):
+        """ finds a element by xpath """
+        return self.browser.find_element(By.XPATH, xpath)
 
+    def find_all_by_xpath(self, xpath):
+        """ finds all elements by xpath """
+        return self.browser.find_elements(By.XPATH, xpath)
 
-if __name__ == '__main__':
-    sys.exit(_main())
+    def click(self, how, what):
+        """ clicks on the element """
+        try:
+            wait = WebDriverWait(self.browser, self.default_timeout)
+            wait.until(EC.element_to_be_clickable((how, what))).click()
+        except (ElementClickInterceptedException, TimeoutException):
+            return False
+        return True
 
-# Python Bot script coding done
-# If you find any mistake in this script than please report in my Telegram Group: http://t.me/linux_repo
+    def open_url(self):
+        """ opens the URL """
+        self.browser.get(self.url)
+
+    def get_current_url(self):
+        """ gets the current url """
+        return self.browser.current_url
+
+    def get_title(self, id_name='video-title'):
+        """ gets the video title """
+        try:
+            wait = WebDriverWait(self.browser, self.default_timeout)
+            wait.until(EC.presence_of_element_located((By.ID, id_name)))
+            return self.browser.title
+        except TimeoutException:
+            return None
+
+    def search(self, query):
+        """ searches for the given term(s) and print the result """
+        result = {}
+        try:
+            search = self.find_by_name('search_query')
+            time.sleep(2)
+            search.click()
+            time.sleep(2)
+            search.clear()
+            search.send_keys(query)
+            time.sleep(10)
+            search.send_keys(Keys.DOWN)
+            search.send_keys(Keys.ENTER)
+            self.click(
+                By.XPATH,
+                "//div[@id='more']/yt-formatted-string/span[3]")
+            wait = WebDriverWait(self.browser, self.default_timeout)
+            wait.until(
+                EC.visibility_of_all_elements_located(
+                    ((By.CSS_SELECTOR,
+                      'a.yt-simple-endpoint.style-scope.ytd-video-renderer#video-title'))))
+            items = self.find_all_by_xpath(
+                '//*[@id="contents"]/ytd-video-renderer')
+            for item in items:
+                if item.is_displayed():
+                    v_info = item.find_element(By.ID, 'video-title')
+                    c_info = item.find_element(By.CLASS_NAME, 'ytd-channel-name')
+                    v_link = v_info.get_attribute('href')
+                    v_id = v_link.strip('https://www.youtube.com/watch?v=')
+                    v_title = v_info.get_attribute('title')
+                    c_url = c_info.find_element(By.CLASS_NAME, 'yt-formatted-string').get_attribute('href')
+                    result[v_id] = {
+                        'id': v_id,
+                        'video title': v_title,
+                        'video url': v_link,
+                        'channel name': c_info.text,
+                        'channel url': c_url,
+                        'element': v_info,
+                    }
+            return result
+        except NoSuchElementException:
+            return None
+
+    def play_video(self, class_name='ytp-play-button'):
+        """ clicks on the play button """
+        self.click(By.CLASS_NAME, class_name)
+
+    def mute_video(self, class_name='ytp-mute-button'):
+        """ clicks on the mute button """
+        self.click(By.CLASS_NAME, class_name)
+
+    def skip_ad(self, class_name='ytp-ad-skip-button-text', max_attempts=20, time_wait=0.5):
+        """ skips ads """
+        attempts = 0
+        while attempts <= max_attempts:
+            try:
+                button = self.find_by_class(class_name)
+                if button.is_enabled() or button.is_displayed():
+                    if self.verbose:
+                        print(button.get_attribute('textContent').lower())
+                    button.click()
+            except (ElementNotInteractableException, ElementClickInterceptedException):
+                time.sleep(time_wait)
+            except (NoSuchElementException, TimeoutException, AttributeError):
+                break
+            attempts += 1
+
+    def get_views(self, class_name='view-count'):
+        """ gets the total views """
+        try:
+            views = self.find_by_class(class_name).get_attribute('textContent')
+            return views.strip(' views')
+        except NoSuchElementException:
+            return None
+
+    def get_channel_name(self, class_name='ytd-channel-name'):
+        """ gets the channel name """
+        try:
+            return self.find_by_class(class_name).text
+        except NoSuchElementException:
+            return None
+
+    def get_subscribers(self, id_name='owner-sub-count'):
+        """ gets the total of subscribers """
+        try:
+            return self.find_by_id(id_name).text.strip(' subscribers')
+        except NoSuchElementException:
+            return None
+
+    def get_player_state(self):
+        """ returns the state of the player """
+        try:
+            js_element = "return document.getElementById('movie_player').getPlayerState()"
+            return self.browser.execute_script(js_element)
+        except JavascriptException:
+            return -2
+
+    def refresh_page(self):
+        """ refreshes the page """
+        self.browser.refresh()
+
+    def time_duration(self, class_name='ytp-time-duration'):
+        """ gets the video duration time """
+        try:
+            duration = self.find_by_class(class_name)
+            if duration:
+                return duration.get_attribute('textContent')
+        except NoSuchElementException:
+            return None
+        return None
+
+    def disconnect(self):
+        """ closes the connection """
+        self.browser.close()
+        self.browser.quit()
+
+# vim: set et ts=4 sw=4 sts=4 tw=80
+EOF
